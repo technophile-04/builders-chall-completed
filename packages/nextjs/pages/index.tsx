@@ -36,7 +36,6 @@ const Home: NextPage = () => {
   useEffect(() => {
     const API_URL = "https://scaffold-directory-dev.ew.r.appspot.com/builders";
 
-    // Make a get request to the API using axios
     const fetchData = async () => {
       setLoading(true);
       const res = await fetch(API_URL);
