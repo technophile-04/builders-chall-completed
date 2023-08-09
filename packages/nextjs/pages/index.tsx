@@ -1,9 +1,57 @@
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { NextPage } from "next";
-import { BugAntIcon, MagnifyingGlassIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import CopyToClipboard from "react-copy-to-clipboard";
+import { CheckCircleIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { MetaHeader } from "~~/components/MetaHeader";
+import { Spinner } from "~~/components/Spinner";
+import { displayTxResult } from "~~/components/scaffold-eth";
+
+const challenges_id = ["decentralized-staking", "dice-game", "simple-nft-example", "token-vendor"] as const;
+
+type CHALLENGE_DATA = {
+  autoGrading: boolean;
+  contractUrl: string;
+  deployedUrl: string;
+  reviewComment: string;
+  submittedTimeStamp: number;
+  status: "ACCEPTED" | "PENDING" | "REJECTED";
+};
+
+type BUILDER_DATA = {
+  challenges?: {
+    [key in (typeof challenges_id)[number]]?: CHALLENGE_DATA;
+  };
+  creationTimestamp: number;
+  id: string;
+};
 
 const Home: NextPage = () => {
+  // const [builderWithStakingChallengeAccepted, setBuilderWithStakingChallengeAccepted] = useState<BUILDER_DATA[]>([]);
+  const [addressCopied, setAddressCopied] = useState(false);
+  const [acceptedBuilderAddress, setAcceptedBuildersAdderess] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedChallengeId, setSelectedChallengeId] =
+    useState<(typeof challenges_id)[number]>("decentralized-staking");
+
+  useEffect(() => {
+    const API_URL = "https://scaffold-directory-dev.ew.r.appspot.com/builders";
+
+    // Make a get request to the API using axios
+    const fetchData = async () => {
+      setLoading(true);
+      const res = await fetch(API_URL);
+      const data = (await res.json()) as BUILDER_DATA[];
+      const buildersWithStakingChallengeAccepted = data.filter(
+        builder => builder.challenges?.[selectedChallengeId]?.status === "ACCEPTED",
+      );
+      // setBuilderWithStakingChallengeAccepted(buildersWithStakingChallengeAccepted);
+      setAcceptedBuildersAdderess(buildersWithStakingChallengeAccepted.map(builder => builder.id));
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [selectedChallengeId]);
+
   return (
     <>
       <MetaHeader />
@@ -22,39 +70,74 @@ const Home: NextPage = () => {
             <code className="italic bg-base-300 text-base font-bold">packages/hardhat/contracts</code>
           </p>
         </div>
+        {/*Use a daisUI select to render all challenges_id*/}
+        <select
+          className="select select-bordered w-64 mb-8"
+          value={selectedChallengeId}
+          onChange={e => setSelectedChallengeId(e.target.value as (typeof challenges_id)[number])}
+        >
+          {challenges_id.map(challenge_id => (
+            <option key={challenge_id} value={challenge_id}>
+              {challenge_id}
+            </option>
+          ))}
+        </select>
 
         <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col sm:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contract
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <SparklesIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Experiment with{" "}
-                <Link href="/example-ui" passHref className="link">
-                  Example UI
-                </Link>{" "}
-                to build your own UI.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
+          {/*Render Builders list*/}
+          <div className="flex flex-col items-center justify-center">
+            <h2 className="text-center text-2xl mb-8">Builders {acceptedBuilderAddress.length}</h2>
+            {loading ? (
+              <Spinner width="75" height="75" />
+            ) : (
+              <div className="grid w-3/4">
+                {/* {builderWithStakingChallengeAccepted.map(builder => ( */}
+                {/*   <div key={builder.id} className="flex flex-col bg-base-100 rounded-lg p-6 hover:bg-base-200"> */}
+                {/*     <div className="flex items-center justify-center mb-4"> */}
+                {/*       <SparklesIcon className="w-10 h-10 text-yellow-500" /> */}
+                {/*     </div> */}
+                {/*     <a */}
+                {/*       href={`https://app.buidlguidl.com/builders/${builder.id}`} */}
+                {/*       target="_blank" */}
+                {/*       className="text-xl font-bold text-center mb-4" */}
+                {/*       rel="noreferrer" */}
+                {/*     > */}
+                {/*       {builder.id} */}
+                {/*     </a> */}
+                {/*     <div className="flex items-center justify-center"> */}
+                {/*       <BugAntIcon className="w-6 h-6 text-red-500" /> */}
+                {/*       <span className="ml-2">{builder.challenges?.["decentralized-staking"]?.status}</span> */}
+                {/*     </div> */}
+                {/*   </div> */}
+                {/* ))} */}
+                <div>
+                  {addressCopied ? (
+                    <CheckCircleIcon
+                      className="ml-1.5 text-xl font-normal text-sky-600 h-12 w-12 cursor-pointer"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <CopyToClipboard
+                      text={JSON.stringify(acceptedBuilderAddress)}
+                      onCopy={() => {
+                        setAddressCopied(true);
+                        setTimeout(() => {
+                          setAddressCopied(false);
+                        }, 800);
+                      }}
+                    >
+                      <DocumentDuplicateIcon
+                        className="ml-1.5 text-xl font-normal text-sky-600 h-12 w-12 cursor-pointer"
+                        aria-hidden="true"
+                      />
+                    </CopyToClipboard>
+                  )}
+                  <div className="overflow-auto bg-secondary rounded-t-none rounded-3xl">
+                    <pre className="text-xs pt-4">{displayTxResult(acceptedBuilderAddress)}</pre>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
