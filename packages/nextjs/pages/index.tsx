@@ -49,11 +49,11 @@ const Home: NextPage = () => {
       const res = await fetch(API_URL);
       const data = (await res.json()) as BUILDER_DATA[];
       console.log("DATA", data);
-      const buildersWithStakingChallengeAccepted = data.filter(
+      const builderWithSelectedChallengeAccepted = data.filter(
         builder => builder.challenges?.[selectedChallengeId]?.status === "ACCEPTED",
       );
       // setBuilderWithStakingChallengeAccepted(buildersWithStakingChallengeAccepted);
-      setAcceptedBuildersAdderess(buildersWithStakingChallengeAccepted.map(builder => builder.id));
+      setAcceptedBuildersAdderess(builderWithSelectedChallengeAccepted.map(builder => builder.id));
       setLoading(false);
     };
 
@@ -70,7 +70,7 @@ const Home: NextPage = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Builders");
 
-    XLSX.writeFile(wb, "accepted_builders.xlsx");
+    XLSX.writeFile(wb, `${selectedChallengeId}_challenge_accepted_builders.xlsx`);
   };
 
   return (
@@ -86,7 +86,7 @@ const Home: NextPage = () => {
         </div>
         {/*Use a daisUI select to render all challenges_id*/}
         <select
-          className="select select-bordered w-64 mb-8"
+          className="select select-bordered w-64"
           value={selectedChallengeId}
           onChange={e => setSelectedChallengeId(e.target.value as (typeof challenges_id)[number])}
         >
@@ -97,46 +97,46 @@ const Home: NextPage = () => {
           ))}
         </select>
 
-        <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">
+        <div className="flex-grow w-full mt-4 px-8 py-2">
           {/*Render Builders list*/}
-          <div className="flex flex-col items-center justify-center">
-            <h2 className="text-center text-2xl mb-8">Builders {acceptedBuilderAddress.length}</h2>
+          <div className="flex flex-col items-center justify-center gap-4">
+            <h2 className="text-center text-2xl m-0">Builders {acceptedBuilderAddress.length}</h2>
             {loading ? (
-              <Spinner width="75" height="75" />
+              <Spinner width="55" height="55" />
             ) : (
-              <div className="grid w-3/4">
-                <div>
-                  {addressCopied ? (
-                    <CheckCircleIcon
-                      className="ml-1.5 text-xl font-normal text-sky-600 h-12 w-12 cursor-pointer"
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <>
-                      <div className="mt-4 mb-8">
-                        <button className="btn btn-primary" onClick={handleDownloadExcel}>
-                          Download Excel
-                        </button>
-                      </div>
-                      <CopyToClipboard
-                        text={JSON.stringify(acceptedBuilderAddress)}
-                        onCopy={() => {
-                          setAddressCopied(true);
-                          setTimeout(() => {
-                            setAddressCopied(false);
-                          }, 800);
-                        }}
-                      >
-                        <DocumentDuplicateIcon
-                          className="ml-1.5 text-xl font-normal text-sky-600 h-12 w-12 cursor-pointer"
+              <div className="grid w-3/4 gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="flex gap-2">
+                    <div className="">
+                      <button className="btn btn-primary btn-sm" onClick={handleDownloadExcel}>
+                        Download Excel
+                      </button>
+                    </div>
+                    <CopyToClipboard
+                      text={JSON.stringify(acceptedBuilderAddress)}
+                      onCopy={() => {
+                        setAddressCopied(true);
+                        setTimeout(() => {
+                          setAddressCopied(false);
+                        }, 800);
+                      }}
+                    >
+                      {addressCopied ? (
+                        <CheckCircleIcon
+                          className="ml-1.5 text-xl font-normal text-sky-600 h-8 w-8 cursor-pointer"
                           aria-hidden="true"
                         />
-                      </CopyToClipboard>
-                    </>
-                  )}
-                  <div className="overflow-auto bg-secondary rounded-t-none rounded-3xl">
-                    <pre className="text-xs pt-4">{displayTxResult(acceptedBuilderAddress)}</pre>
+                      ) : (
+                        <DocumentDuplicateIcon
+                          className="ml-1.5 text-xl font-normal text-sky-600 h-8 w-8 cursor-pointer"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </CopyToClipboard>
                   </div>
+                </div>
+                <div className="overflow-auto bg-secondary rounded-3xl flex items-center">
+                  <pre className="text-xs p-4">{displayTxResult(acceptedBuilderAddress)}</pre>
                 </div>
               </div>
             )}
